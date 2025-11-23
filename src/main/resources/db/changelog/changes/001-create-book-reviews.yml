@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-book-reviews
+      author: igor.jarosz
+      changes:
+        - createTable:
+            tableName: book_reviews
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: book_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: rating
+                  type: INT
+                  constraints:
+                    nullable: false
+                    checkConstraint: must_be_between_1_and_5 CHECK (rating >= 1 AND rating <= 5)
+
+              - column:
+                  name: review
+                  type: VARCHAR(2000)
+                  constraints:
+                    nullable: true

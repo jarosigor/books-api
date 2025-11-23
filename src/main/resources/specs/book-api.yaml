@@ -1,0 +1,380 @@
+openapi: 3.0.3
+info:
+  title: Book Review API
+  description: |
+    REST API for searching books and managing reviews.
+    
+    Features:
+    - Search books by title (from Gutendex API)
+    - Post reviews and ratings for books
+    - Get book details with average ratings
+    
+    Book data is fetched from Gutendex API (https://gutendex.com/).
+    Reviews are stored in PostgreSQL database.
+  version: 1.0.0
+  contact:
+    name: Igor Jarosz
+    email: jaroszigor01@gmail.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: books
+    description: Book search and information
+  - name: reviews
+    description: Book reviews and ratings
+
+paths:
+  /api/books/search:
+    get:
+      tags:
+        - books
+      summary: Search books by title
+      description: |
+        Search for books using Gutendex API.
+        Returns paginated results with all book fields including authors, languages, and download count.
+      operationId: searchBooks
+      parameters:
+        - $ref: '#/components/parameters/TitleQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PageSizeQuery'
+      responses:
+        '200':
+          description: Books found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookSearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/GutendexUnavailable'
+  /api/books/{bookId}:
+    get:
+      tags:
+        - books
+      summary: Get book details with ratings
+      description: |
+        Retrieve complete book information from Gutendex API combined with review statistics.
+        Includes average rating and a list of reviews submitted for the book.
+      operationId: getBookDetails
+      parameters:
+        - $ref: '#/components/parameters/BookIdPath'
+      responses:
+        '200':
+          description: Book found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetails'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/GutendexUnavailable'
+
+  /api/books/reviews:
+    post:
+      tags:
+        - reviews
+      summary: Post a review for a book
+      description: |
+        Submit a rating (1-5) and review text for a specific book.
+        The book must exist in Gutendex API.
+        Review is stored in PostgreSQL database.
+      operationId: createReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostReviewRequestBody'
+      responses:
+        '201':
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+            $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    TitleQuery:
+      name: title
+      in: query
+      required: true
+      description: Book title to search for
+      schema:
+        $ref: '#/components/schemas/Title'
+
+    PageQuery:
+      name: page
+      in: query
+      required: false
+      description: Page number (0-indexed)
+      schema:
+        $ref: '#/components/schemas/Page'
+
+    PageSizeQuery:
+      name: size
+      in: query
+      required: false
+      description: Results per page (maximum 40)
+      schema:
+        $ref: '#/components/schemas/PageSize'
+
+    BookIdPath:
+      name: bookId
+      in: path
+      required: true
+      description: Unique book ID from Gutendex
+      schema:
+        $ref: '#/components/schemas/BookId'
+
+  responses:
+    BookSearchResponse:
+      description: Books found successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BookSearchResponse'
+
+    BadRequest:
+      description: Invalid request parameters or body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    GutendexUnavailable:
+      description: Gutendex API unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    BookSearchResponse:
+      type: object
+      description: Paginated search results
+      required:
+        - content
+        - page
+        - pageSize
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          description: List of books in current page
+          items:
+            $ref: '#/components/schemas/BookSearchResult'
+        page:
+          $ref: '#/components/schemas/Page'
+        pageSize:
+          $ref: '#/components/schemas/PageSize'
+        totalElements:
+          type: integer
+          description: Total number of books found
+          example: 42
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 5
+
+    BookSearchResult:
+      type: object
+      description: Book information in search results
+      required:
+        - bookId
+        - title
+        - authors
+        - languages
+        - downloadCount
+      properties:
+        bookId:
+          $ref: '#/components/schemas/BookId'
+        title:
+          $ref: '#/components/schemas/Title'
+        authors:
+          type: array
+          description: List of book authors
+          items:
+            $ref: '#/components/schemas/Author'
+        languages:
+          type: array
+          description: List of language codes
+          items:
+            type: string
+          example: [ "en" ]
+        downloadCount:
+          type: integer
+          description: Number of downloads
+          example: 15000
+
+    BookDetails:
+      type: object
+      description: Complete book information with review statistics
+      required:
+        - bookId
+        - title
+        - authors
+        - languages
+        - downloadCount
+      properties:
+        bookId:
+          $ref: '#/components/schemas/BookId'
+        title:
+          $ref: '#/components/schemas/Title'
+        authors:
+          type: array
+          description: List of authors
+          items:
+            $ref: '#/components/schemas/Author'
+        languages:
+          type: array
+          description: List of language codes
+          items:
+            type: string
+          example: ["en"]
+        downloadCount:
+          type: integer
+          description: Number of downloads
+          example: 15000
+        averageRating:
+          type: number
+          format: double
+          nullable: true
+          description: Average rating from all reviews (1.0-5.0, null if no reviews)
+          example: 4.5
+        reviews:
+          type: array
+          description: List of reviews for the book
+          items:
+            $ref: '#/components/schemas/Review'
+
+    PostReviewRequestBody:
+      type: object
+      description: Request body for creating a review
+      required:
+        - body
+      properties:
+        body:
+          $ref: '#/components/schemas/Review'
+
+    Review:
+      type: object
+      description: Book review
+      required:
+        - bookId
+        - rating
+        - reviewText
+      properties:
+        bookId:
+          $ref: '#/components/schemas/BookId'
+        rating:
+          $ref: '#/components/schemas/Rating'
+        reviewText:
+          $ref: '#/components/schemas/ReviewText'
+
+    Author:
+      type: object
+      description: Book author information
+      properties:
+        name:
+          type: string
+          description: Author's full name
+          example: "Andrzej Sapkowski"
+        birthYear:
+          type: integer
+          nullable: true
+          description: Year of birth (may be null if unknown)
+          example: 1952
+        deathYear:
+          type: integer
+          nullable: true
+          description: Year of death (null if still alive or unknown)
+          example: null
+
+    ErrorResponse:
+      type: object
+      description: Standard error response
+      required:
+        - status
+        - message
+        - timestamp
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        message:
+          type: string
+          description: Error message
+          example: "Book not found with ID: invalid-id"
+        path:
+          type: string
+          description: Request path that caused the error
+          example: "/api/books/invalid-id"
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+          example: "2024-01-15T10:30:00Z"
+        errors:
+          type: array
+          description: List of validation errors (if applicable)
+          items:
+            type: string
+          example: ["rating: Rating must be between 1 and 5"]
+
+    BookId:
+      type: integer
+      minimum: 1
+      description: Book identifier from Gutendex API
+      example: 12
+
+    Rating:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: Rating between 1 and 5 stars
+      example: 4
+
+    ReviewText:
+      type: string
+      minLength: 10
+      maxLength: 2000
+      description: Review text content
+      example: "Excellent book! Very comprehensive and well-written. Highly recommended for all developers."
+
+    Title:
+      type: string
+      minLength: 1
+      description: Book title
+      example: "The Lady of the Lake"
+
+    Page:
+      type: integer
+      minimum: 0
+      default: 0
+      example: 0
+
+    PageSize:
+      type: integer
+      minimum: 1
+      maximum: 40
+      default: 10
+      example: 10

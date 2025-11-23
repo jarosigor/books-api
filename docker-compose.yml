@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bookapi-postgres
+    environment:
+      POSTGRES_DB: bookapi
+      POSTGRES_USER: morotech
+      POSTGRES_PASSWORD: letMeInPlease
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bookapi-network
+
+  app:
+    build: .
+    container_name: bookapi-app
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookapi
+      SPRING_DATASOURCE_USERNAME: morotech
+      SPRING_DATASOURCE_PASSWORD: letMeInPlease
+    ports:
+      - "8080:8080"
+    networks:
+      - bookapi-network
+
+volumes:
+  postgres_data:
+
+networks:
+  bookapi-network:
+    driver: bridge

@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-bookId-index
+      author: igor.jarosz
+      changes:
+        - createIndex:
+            indexName: idx_reviews_book_id
+            tableName: book_reviews
+            columns:
+              - column:
+                  name: book_id
