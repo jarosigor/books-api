@@ -2,15 +2,6 @@
 
 A Spring Boot REST API for searching books and managing reviews, integrating with the Gutendex API and PostgreSQL database.
 
-## 📋 Table of Contents
-
-- [Technical Requirements](#technical-requirements)
-- [Features](#features)
-- [Getting Started](#getting-started)
-- [Running the Application](#running-the-application)
-- [Running Tests](#running-tests)
-- [API Documentation](#api-documentation)
-
 ## 🔧 Technical Requirements
 
 ### Required Software
