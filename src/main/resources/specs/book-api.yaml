@@ -42,11 +42,7 @@ paths:
         - $ref: '#/components/parameters/PageSizeQuery'
       responses:
         '200':
-          description: Books found successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookSearchResponse'
+          $ref: '#/components/responses/BookSearchResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '503':
@@ -64,11 +60,7 @@ paths:
         - $ref: '#/components/parameters/BookIdPath'
       responses:
         '200':
-          description: Book found successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookDetails'
+            $ref: '#/components/responses/BookDetailsResponse'
         '404':
           $ref: '#/components/responses/NotFound'
         '503':
@@ -92,13 +84,9 @@ paths:
               $ref: '#/components/schemas/PostReviewRequestBody'
       responses:
         '201':
-          description: Review created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Review'
+          $ref: '#/components/responses/CreateReviewResponse'
         '400':
-            $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -143,6 +131,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/BookSearchResponse'
+
+    BookDetailsResponse:
+      description: Book details found successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BookDetailsResponse'
+
+    CreateReviewResponse:
+      description: Review created successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateReviewResponse'
 
     BadRequest:
       description: Invalid request parameters or body
@@ -224,7 +226,7 @@ components:
           description: Number of downloads
           example: 15000
 
-    BookDetails:
+    BookDetailsResponse:
       type: object
       description: Complete book information with review statistics
       required:
@@ -256,14 +258,35 @@ components:
         averageRating:
           type: number
           format: double
-          nullable: true
-          description: Average rating from all reviews (1.0-5.0, null if no reviews)
+          nullable: false
+          description: Average rating from all reviews (1.0-5.0, 0.0 if no reviews)
           example: 4.5
         reviews:
           type: array
           description: List of reviews for the book
           items:
-            $ref: '#/components/schemas/Review'
+            $ref: '#/components/schemas/ReviewText'
+
+    CreateReviewResponse:
+      type: object
+      description: Review creation response
+      required:
+        - reviewId
+        - bookId
+        - rating
+        - reviewText
+      properties:
+        reviewId:
+          type: string
+          format: uuid
+          description: Unique identifier of the created review
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        bookId:
+          $ref: '#/components/schemas/BookId'
+        rating:
+          $ref: '#/components/schemas/Rating'
+        reviewText:
+          $ref: '#/components/schemas/ReviewText'
 
     PostReviewRequestBody:
       type: object

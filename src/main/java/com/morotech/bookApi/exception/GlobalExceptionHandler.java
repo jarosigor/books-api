@@ -63,6 +63,13 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, "Type mismatch occurred: " + ex.getMessage());
     }
 
+    @ExceptionHandler(ReviewPersistanceException.class)
+    public ResponseEntity<ErrorResponse> handleReviewPersistanceException(ReviewPersistanceException ex,
+                                                                          HttpServletRequest request) {
+        log.error("Review persistence exception: {}", ex.getMessage(), ex);
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
     private ResponseEntity<ErrorResponse> buildError(HttpStatus status, String message) {
         ErrorResponse error = new ErrorResponse(status.value(), message, OffsetDateTime.now());
         return ResponseEntity.status(status).body(error);

@@ -1,6 +1,7 @@
 package com.morotech.bookApi.mapper;
 
 import com.morotech.bookApi.model.Author;
+import com.morotech.bookApi.model.BookDetailsResponse;
 import com.morotech.bookApi.model.BookSearchResponse;
 import com.morotech.bookApi.model.BookSearchResult;
 import com.morotech.bookApi.model.dto.GutendexAuthor;
@@ -21,23 +22,37 @@ public class GutendexResponseMapper {
         return new BookSearchResponse(content, page, size, totalElements, totalPages);
     }
 
-    private BookSearchResult toBookSearchResult(GutendexBook b) {
-        List<Author> authors = b.getAuthors() == null ? List.of()
-                : b.getAuthors().stream().map(this::toAuthor).toList();
+    private BookSearchResult toBookSearchResult(GutendexBook book) {
+        List<Author> authors = book.getAuthors() == null ? List.of()
+                : book.getAuthors().stream().map(this::toAuthor).toList();
 
         return new BookSearchResult(
-                b.getId(),
-                b.getTitle(),
+                book.getId(),
+                book.getTitle(),
                 authors,
-                b.getLanguages(),
-                b.getDownloadCount()
+                book.getLanguages(),
+                book.getDownloadCount()
         );
     }
 
-    private Author toAuthor(GutendexAuthor a) {
+    private Author toAuthor(GutendexAuthor author) {
         return new Author()
-                .name(a.getName())
-                .birthYear(a.getBirthYear())
-                .deathYear(a.getDeathYear());
+                .name(author.getName())
+                .birthYear(author.getBirthYear())
+                .deathYear(author.getDeathYear());
+    }
+
+    public BookDetailsResponse toBookDetailsResponse(GutendexBook book, List<String> reviews, double avgRating) {
+        List<Author> authors = book.getAuthors() == null ? List.of()
+                : book.getAuthors().stream().map(this::toAuthor).toList();
+
+        return new BookDetailsResponse()
+                .bookId(book.getId())
+                .title(book.getTitle())
+                .authors(authors)
+                .languages(book.getLanguages())
+                .downloadCount(book.getDownloadCount())
+                .averageRating(avgRating)
+                .reviews(reviews);
     }
 }

@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-uuid-to-reviews
+      author: igor.jarosz
+      changes:
+        - addColumn:
+            tableName: book_reviews
+            columns:
+              - column:
+                  name: uuid
+                  type: UUID
+        - addNotNullConstraint:
+            tableName: book_reviews
+            columnName: uuid
+            columnDataType: UUID
+        - addUniqueConstraint:
+            tableName: book_reviews
+            columnNames: uuid
+            constraintName: uq_reviews_uuid

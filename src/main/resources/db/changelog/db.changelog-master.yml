@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/changes/001-create-book-reviews.yml
   - include:
       file: db/changelog/changes/002-add-index.yaml
+  - include:
+      file: db/changelog/changes/003-add-uuid-to-reviews.yaml

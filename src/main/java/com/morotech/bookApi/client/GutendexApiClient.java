@@ -1,11 +1,13 @@
 package com.morotech.bookApi.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.morotech.bookApi.exception.GutendexApiException;
 import com.morotech.bookApi.exception.InvalidPageException;
 import com.morotech.bookApi.exception.ObjectMapperException;
 import com.morotech.bookApi.model.dto.GutendexApiResponse;
+import com.morotech.bookApi.model.dto.GutendexBook;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -42,7 +44,7 @@ public class GutendexApiClient {
             if (gutendexApiResponseJson == null || gutendexApiResponseJson.isEmpty()) {
                 return null;
             } else {
-                log.info("Gutendex API call successful");
+                log.info("Gutendex API search books call successful");
                 return objectMapper.readValue(gutendexApiResponseJson, GutendexApiResponse.class);
             }
         } catch (RestClientException e) {
@@ -54,20 +56,29 @@ public class GutendexApiClient {
         }
     }
 
-    // To be adjusted
-    public String getBookById(int bookId) {
+    @Cacheable("gutendexBookById")
+    public GutendexBook getBookById(int bookId) {
         log.info("Fetching book details from Gutendex for book ID {}", bookId);
         try {
-            var uri = UriComponentsBuilder.fromPath("/books/{bookId}")
+            var uri = UriComponentsBuilder.fromPath("/books/{bookId}/")
                     .buildAndExpand(bookId)
                     .encode()
                     .toUriString();
-            return gutendexRestClient.get()
+            var gutendexApiResponseJson= gutendexRestClient.get()
                     .uri(uri)
                     .retrieve()
                     .body(String.class);
+            if (gutendexApiResponseJson == null || gutendexApiResponseJson.isEmpty()) {
+                return null;
+            } else {
+                log.info("Gutendex API get book call successful");
+                return objectMapper.readValue(gutendexApiResponseJson, GutendexBook.class);
+            }
         } catch (RestClientException e) {
             throw new GutendexApiException(String.format("Error while fetching book details for book ID %d: %s", bookId, e.getMessage()));
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gutendex API response", e);
+            throw new ObjectMapperException(String.format("Error while processing API response: %s", e.getMessage()));
         }
     }
 }
